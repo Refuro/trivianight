@@ -1,0 +1,40 @@
+{
+  "id": "sample-trivia",
+  "name": "Sample Trivia Pack",
+  "mode": "trivia",
+  "rounds": [
+    {
+      "name": "Round 1 — Warmup",
+      "pointValue": 1,
+      "questions": [
+        {
+          "q": "What is the capital of Australia?",
+          "a": "Canberra",
+          "note": "Not Sydney."
+        },
+        {
+          "q": "How many bones are in the adult human body?",
+          "a": "206"
+        },
+        {
+          "q": "What year did the first iPhone release?",
+          "a": "2007"
+        }
+      ]
+    },
+    {
+      "name": "Round 2 — Double Points",
+      "pointValue": 2,
+      "questions": [
+        {
+          "q": "Who painted The Persistence of Memory?",
+          "a": "Salvador Dalí"
+        },
+        {
+          "q": "What is the chemical symbol for gold?",
+          "a": "Au"
+        }
+      ]
+    }
+  ]
+}

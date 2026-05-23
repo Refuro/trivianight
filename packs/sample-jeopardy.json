@@ -1,0 +1,72 @@
+{
+  "id": "sample-jeopardy",
+  "name": "Sample Jeopardy Pack",
+  "mode": "jeopardy",
+  "board": [
+    {
+      "category": "Pop Culture",
+      "clues": [
+        { "value": 200, "clue": "This singer wore a meat dress to the 2010 VMAs", "answer": "Lady Gaga" },
+        { "value": 400, "clue": "The actor behind Iron Man in the MCU", "answer": "Robert Downey Jr." },
+        { "value": 600, "clue": "Show featuring a dragon-loving mother named Daenerys", "answer": "Game of Thrones" },
+        { "value": 800, "clue": "Band that released the album Dark Side of the Moon", "answer": "Pink Floyd", "dailyDouble": true },
+        { "value": 1000, "clue": "Director of Pulp Fiction and Kill Bill", "answer": "Quentin Tarantino" }
+      ]
+    },
+    {
+      "category": "Science",
+      "clues": [
+        { "value": 200, "clue": "Closest planet to the sun", "answer": "Mercury" },
+        { "value": 400, "clue": "Powerhouse of the cell", "answer": "Mitochondria" },
+        { "value": 600, "clue": "Particle with no electric charge in an atom's nucleus", "answer": "Neutron" },
+        { "value": 800, "clue": "Speed of light in km/s (rounded)", "answer": "300,000" },
+        { "value": 1000, "clue": "Scientist behind general relativity", "answer": "Albert Einstein" }
+      ]
+    },
+    {
+      "category": "Geography",
+      "clues": [
+        { "value": 200, "clue": "Largest country by area", "answer": "Russia" },
+        { "value": 400, "clue": "Longest river in the world", "answer": "Nile" },
+        { "value": 600, "clue": "Country where the Great Barrier Reef is located", "answer": "Australia" },
+        { "value": 800, "clue": "Capital of Canada", "answer": "Ottawa" },
+        { "value": 1000, "clue": "Smallest country in the world by area", "answer": "Vatican City" }
+      ]
+    },
+    {
+      "category": "History",
+      "clues": [
+        { "value": 200, "clue": "Year WWII ended", "answer": "1945" },
+        { "value": 400, "clue": "First president of the United States", "answer": "George Washington" },
+        { "value": 600, "clue": "Empire ruled by Julius Caesar", "answer": "Roman Empire" },
+        { "value": 800, "clue": "Year the Berlin Wall fell", "answer": "1989" },
+        { "value": 1000, "clue": "Pharaoh whose tomb was discovered in 1922", "answer": "Tutankhamun" }
+      ]
+    },
+    {
+      "category": "Sports",
+      "clues": [
+        { "value": 200, "clue": "Sport played at Wimbledon", "answer": "Tennis" },
+        { "value": 400, "clue": "Number of players on a soccer team", "answer": "11" },
+        { "value": 600, "clue": "Country that invented basketball", "answer": "United States" },
+        { "value": 800, "clue": "NBA player nicknamed 'King James'", "answer": "LeBron James" },
+        { "value": 1000, "clue": "Olympic city in 2000", "answer": "Sydney" }
+      ]
+    },
+    {
+      "category": "Food",
+      "clues": [
+        { "value": 200, "clue": "Main ingredient in guacamole", "answer": "Avocado" },
+        { "value": 400, "clue": "Country pizza originated in", "answer": "Italy" },
+        { "value": 600, "clue": "Spice that gives curry its yellow color", "answer": "Turmeric" },
+        { "value": 800, "clue": "Fermented soybean paste used in Japanese soup", "answer": "Miso" },
+        { "value": 1000, "clue": "French pastry made with layers of butter and dough", "answer": "Croissant" }
+      ]
+    }
+  ],
+  "finalJeopardy": {
+    "category": "Literature",
+    "clue": "Author of 1984 and Animal Farm",
+    "answer": "George Orwell"
+  }
+}

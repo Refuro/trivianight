@@ -3,10 +3,10 @@
 
 // ----- Identity -----
 
-export interface Identity { 
-  name: string, 
-  avatarId: string, 
-  color: string 
+export interface Identity {
+  name: string,
+  avatarId: string,
+  color: string
 }
 
 export interface Player {
@@ -15,6 +15,7 @@ export interface Player {
   avatarId: string;    // matches an id in lib/avatars.ts
   color: string;       // hex string for the ring around avatar
   teamId: string | null;
+  voted: GameMode | null
 }
 
 // ----- Teams -----
@@ -24,6 +25,20 @@ export interface Team {
   name: string;
   score: number;
   memberIds: string[];
+}
+
+// ----- Votes -----
+
+export interface Votes {
+  trivia: number,
+  jeopardy: number,
+}
+
+// ----- Lobby settings (host-controlled) -----
+
+export interface LobbySettings {
+  teamsEnabled: boolean;
+  numTeams: number;   // 2–4
 }
 
 // ----- Room -----
@@ -36,6 +51,8 @@ export interface RoomState {
   hostId: string | null;
   phase: RoomPhase;
   gameMode: GameMode | null;
+  votes: Votes;
+  settings: LobbySettings;
   packId: string | null;
   players: Player[];
   teams: Team[];
@@ -118,20 +135,20 @@ export type Pack = TriviaPack | JeopardyPack;
 
 export type ClientMessage =
   | { type: "join"; isCreator: boolean, name: string; avatarId: string; color: string }
-  | { type: "settings_update"; gameMode?: GameMode; packId?: string }
+  | { type: "settings_update"; teamsEnabled?: boolean; numTeams?: number; packId?: string }
   | { type: "team_join"; teamId: string }
   | { type: "team_create"; name: string }
   | { type: "start_game" }
   | { type: "buzz_in" }
   | {
-      type: "host_action";
-      action: "reveal_question" | "reveal_answer" | "next" | "award" | "judge";
-      payload?: unknown;
-    }
-  | { type: "kicked"; reason: "no_room_found" | "room_full" | "host_kicked" | "previously_kicked"};
+    type: "host_action";
+    action: "reveal_question" | "reveal_answer" | "next" | "award" | "judge";
+    payload?: unknown;
+  }
+  | { type: "vote"; gameMode: GameMode; };
 
 export type ServerMessage =
   | { type: "room_state"; state: RoomState }
   | { type: "you_are"; playerId: string }
   | { type: "error"; message: string }
-  | { type: "kicked"; reason: "no_room_found" | "room_full" | "host_kicked" | "previously_kicked"};
+  | { type: "kicked"; reason: "no_room_found" | "room_full" | "host_kicked" | "previously_kicked" };

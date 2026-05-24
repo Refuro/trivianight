@@ -1,26 +1,26 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* App palette — dark navy base, blue accent */
+  --color-app-bg:      #0c0e1a;
+  --color-card:        #13162a;
+  --color-surface:     #1a1e35;
+  --color-border:      #252c4a;
+  --color-accent:      #3b82f6;
+  --color-accent-dim:  #1d4ed8;
+  --color-accent-glow: rgba(59, 130, 246, 0.25);
+  --color-text:        #e8edf8;
+  --color-muted:       #5c6b8a;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #0c0e1a;
+  color: #e8edf8;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  /* subtle dot-grid background for game-show texture */
+  background-image: radial-gradient(circle, #252c4a 1px, transparent 1px);
+  background-size: 28px 28px;
 }

@@ -4,18 +4,18 @@
 // ----- Identity -----
 
 export interface Identity {
-  name: string,
-  avatarId: string,
-  color: string
+  name: string;
+  avatarId: string;
+  color: string;
 }
 
 export interface Player {
-  id: string;          // assigned by server on connect
+  id: string; // assigned by server on connect
   name: string;
-  avatarId: string;    // matches an id in lib/avatars.ts
-  color: string;       // hex string for the ring around avatar
+  avatarId: string; // matches an id in lib/avatars.ts
+  color: string; // hex string for the ring around avatar
   teamId: string | null;
-  voted: GameMode | null
+  voted: GameMode | null;
 }
 
 // ----- Teams -----
@@ -30,15 +30,15 @@ export interface Team {
 // ----- Votes -----
 
 export interface Votes {
-  trivia: number,
-  jeopardy: number,
+  trivia: number;
+  jeopardy: number;
 }
 
 // ----- Lobby settings (host-controlled) -----
 
 export interface LobbySettings {
   teamsEnabled: boolean;
-  numTeams: number;   // 2–4
+  numTeams: number; // 2–4
 }
 
 // ----- Room -----
@@ -74,17 +74,17 @@ export interface TriviaState {
 
 export interface JeopardyState {
   mode: "jeopardy";
-  usedClues: string[];               // "categoryIndex-clueIndex" strings
+  usedClues: string[]; // "categoryIndex-clueIndex" strings
   activeClue: ActiveClue | null;
-  activeTeamId: string | null;       // whose turn it is to pick
+  activeTeamId: string | null; // whose turn it is to pick
   phase: "board" | "clue" | "answering" | "final";
-  lockedOutPlayerIds: string[];      // wrong-answer lockouts for current clue
+  lockedOutPlayerIds: string[]; // wrong-answer lockouts for current clue
 }
 
 export interface ActiveClue {
   categoryIndex: number;
   clueIndex: number;
-  buzzedPlayerId: string | null;     // null while open for buzz
+  buzzedPlayerId: string | null; // null while open for buzz
 }
 
 // ----- Question pack schemas (mirrors of the JSON files) -----
@@ -134,21 +134,39 @@ export type Pack = TriviaPack | JeopardyPack;
 // Add to this union as you build out features. Discriminated by `type`.
 
 export type ClientMessage =
-  | { type: "join"; isCreator: boolean, name: string; avatarId: string; color: string }
-  | { type: "settings_update"; teamsEnabled?: boolean; numTeams?: number; packId?: string }
+  | {
+      type: "join";
+      isCreator: boolean;
+      name: string;
+      avatarId: string;
+      color: string;
+    }
+  | {
+      type: "settings_update";
+      teamsEnabled?: boolean;
+      numTeams?: number;
+      packId?: string;
+    }
   | { type: "team_join"; teamId: string }
   | { type: "team_create"; name: string }
   | { type: "start_game" }
   | { type: "buzz_in" }
   | {
-    type: "host_action";
-    action: "reveal_question" | "reveal_answer" | "next" | "award" | "judge";
-    payload?: unknown;
-  }
-  | { type: "vote"; gameMode: GameMode; };
+      type: "host_action";
+      action: "reveal_question" | "reveal_answer" | "next" | "award" | "judge";
+      payload?: unknown;
+    }
+  | { type: "vote"; gameMode: GameMode };
 
 export type ServerMessage =
   | { type: "room_state"; state: RoomState }
   | { type: "you_are"; playerId: string }
   | { type: "error"; message: string }
-  | { type: "kicked"; reason: "no_room_found" | "room_full" | "host_kicked" | "previously_kicked" };
+  | {
+      type: "kicked";
+      reason:
+        | "no_room_found"
+        | "room_full"
+        | "host_kicked"
+        | "previously_kicked";
+    };

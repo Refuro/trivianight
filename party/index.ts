@@ -2,7 +2,7 @@ import type * as Party from "partykit/server";
 import type { RoomState, ClientMessage, Player, GameMode, TriviaState } from "../lib/types";
 
 const MAX_PLAYERS = 16
-const TEAM_NAMES = ['Trivia Troublemakers', 'Those People', 'Dubs Innit', 'Slay Queens', 'This is Smarta', 'Stephen Hawking Dance Team', 'Mighty Morphin Flower Arrangers', 'The Team Next to Us Is Cheating', 'We Hate the Trivia Host', 'Christopher Walken on Sunshine', 'Winnie the Shit', 'To Infinity and Beyonce', 'Dark Side of Uranus', 'Trivia Newton John', 'Tequila Mockingbird']
+const TEAM_NAMES = ['Joes Hoes', 'Trivia Troublemakers', 'Those People', 'Dubs Innit', 'Slay Queens', 'This is Smarta', 'Stephen Hawking Dance Team', 'Mighty Morphin Flower Arrangers', 'The Team Next to Us Is Cheating', 'We Hate the Trivia Host', 'Christopher Walken on Sunshine', 'Winnie the Shit', 'To Infinity and Beyonce', 'Dark Side of Uranus', 'Trivia Newton John', 'Tequila Mockingbird']
 
 export default class TriviaParty implements Party.Server {
   state: RoomState;

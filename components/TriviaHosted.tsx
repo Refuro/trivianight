@@ -76,9 +76,23 @@ export default function TriviaHosted({
       : [];
     const alreadyLocked =
       myDraft?.lockedPlayerIds.includes(myPlayerId) ?? false;
+    const hostPlayer = state.players.find((p) => p.id === state.hostId);
+    const hostOffline = !!hostPlayer && !hostPlayer.online;
 
     return (
       <main className="min-h-screen flex flex-col p-6 gap-4">
+        {hostOffline && (
+          <div className="flex items-center justify-between gap-3 bg-yellow-400/10 border border-yellow-400/40 text-yellow-300 text-sm px-4 py-2.5 rounded-xl">
+            <span>The host is offline.</span>
+            <button
+              type="button"
+              onClick={() => send({ type: "claim_host" })}
+              className="bg-yellow-400/20 hover:bg-yellow-400/30 border border-yellow-400/60 text-yellow-200 font-semibold text-xs px-3 py-1 rounded-full transition-colors"
+            >
+              Claim Host
+            </button>
+          </div>
+        )}
         {/* Main content - centered */}
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4 w-full max-w-lg">
@@ -350,12 +364,12 @@ export default function TriviaHosted({
                             return (
                               <div
                                 key={p.id}
-                                title={p.name}
+                                title={p.online ? p.name : `${p.name} (offline)`}
                                 style={{
                                   backgroundColor: p.color,
                                   marginLeft: i === 0 ? 0 : -8,
                                 }}
-                                className="w-7 h-7 rounded-full border-2 border-surface flex items-center justify-center text-sm"
+                                className={`w-7 h-7 rounded-full border-2 border-surface flex items-center justify-center text-sm transition-opacity ${p.online ? "" : "opacity-40 grayscale"}`}
                               >
                                 {emoji}
                               </div>
@@ -411,11 +425,11 @@ export default function TriviaHosted({
                         </div>
                       )}
                       <div
-                        className={`flex items-center gap-2 p-3 rounded-xl border-2 bg-surface shadow-sm transition-colors ${borderClass}`}
+                        className={`relative flex items-center gap-2 p-3 rounded-xl border-2 bg-surface shadow-sm transition-all ${borderClass} ${player.online ? "" : "opacity-50"}`}
                       >
                         <div
                           style={{ backgroundColor: player.color }}
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0"
+                          className={`w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0 ${player.online ? "" : "grayscale"}`}
                         >
                           {emoji}
                         </div>
@@ -427,6 +441,11 @@ export default function TriviaHosted({
                             {player.score} pts
                           </p>
                         </div>
+                        {!player.online && (
+                          <span className="absolute top-1.5 right-2 text-[10px] font-bold uppercase text-muted tracking-wider">
+                            offline
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
@@ -544,12 +563,12 @@ export default function TriviaHosted({
                             return (
                               <div
                                 key={p.id}
-                                title={p.name}
+                                title={p.online ? p.name : `${p.name} (offline)`}
                                 style={{
                                   backgroundColor: p.color,
                                   marginLeft: i === 0 ? 0 : -8,
                                 }}
-                                className="w-7 h-7 rounded-full border-2 border-surface flex items-center justify-center text-sm"
+                                className={`w-7 h-7 rounded-full border-2 border-surface flex items-center justify-center text-sm transition-opacity ${p.online ? "" : "opacity-40 grayscale"}`}
                               >
                                 {emoji}
                               </div>
@@ -572,12 +591,13 @@ export default function TriviaHosted({
                   return (
                     <div
                       key={player.id}
-                      className="flex items-center justify-between bg-surface border border-border rounded-xl px-3 py-2"
+                      className={`flex items-center justify-between bg-surface border border-border rounded-xl px-3 py-2 transition-opacity ${player.online ? "" : "opacity-50"}`}
+                      title={player.online ? player.name : `${player.name} (offline)`}
                     >
                       <div className="flex items-center gap-2">
                         <div
                           style={{ backgroundColor: player.color }}
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-sm flex-shrink-0"
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-sm flex-shrink-0 ${player.online ? "" : "grayscale"}`}
                         >
                           {emoji}
                         </div>

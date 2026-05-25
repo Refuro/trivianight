@@ -35,11 +35,62 @@ export default function LandingPage() {
   const [shownAvatar, setShownAvatar] = useState(0)
   const [shownColor, setShownColor] = useState(0)
   const [mounted, setMounted] = useState(false)
+  const [wsBlocked, setWsBlocked] = useState(false)
 
   useEffect(() => {
     setShownAvatar(Math.floor(Math.random() * AVATARS.length))
     setShownColor(Math.floor(Math.random() * AVATAR_COLORS.length))
     setMounted(true)
+  }, [])
+
+  // One-shot WebSocket reachability probe; cached per session.
+  useEffect(() => {
+    try {
+      const cached = sessionStorage.getItem('wsOk')
+      if (cached === 'true') return
+      if (cached === 'false') { setWsBlocked(true); return }
+    } catch { /* ignore */ }
+
+    const host = process.env.NEXT_PUBLIC_PARTYKIT_HOST ?? "localhost:1999"
+    const proto = host.startsWith('localhost') ? 'ws' : 'wss'
+    const url = `${proto}://${host}/parties/main/__probe__`
+    let settled = false
+    let ws: WebSocket | null = null
+    try {
+      ws = new WebSocket(url)
+    } catch {
+      setWsBlocked(true)
+      try { sessionStorage.setItem('wsOk', 'false') } catch { /* ignore */ }
+      return
+    }
+
+    const timeout = setTimeout(() => {
+      if (settled) return
+      settled = true
+      setWsBlocked(true)
+      try { sessionStorage.setItem('wsOk', 'false') } catch { /* ignore */ }
+      ws?.close()
+    }, 4000)
+
+    ws.onopen = () => {
+      if (settled) return
+      settled = true
+      clearTimeout(timeout)
+      try { sessionStorage.setItem('wsOk', 'true') } catch { /* ignore */ }
+      ws?.close()
+    }
+    ws.onerror = () => {
+      if (settled) return
+      settled = true
+      clearTimeout(timeout)
+      setWsBlocked(true)
+      try { sessionStorage.setItem('wsOk', 'false') } catch { /* ignore */ }
+    }
+
+    return () => {
+      clearTimeout(timeout)
+      ws?.close()
+    }
   }, [])
 
   const router = useRouter()
@@ -96,6 +147,17 @@ export default function LandingPage() {
         <Suspense>
           <KickBanner />
         </Suspense>
+
+        {/* WebSocket-blocked warning */}
+        {wsBlocked && (
+          <div className="w-full bg-yellow-400/10 border border-yellow-400/40 text-yellow-300 text-sm px-4 py-3 rounded-xl">
+            <p className="font-semibold mb-1">⚠️ Real-time connection blocked</p>
+            <p className="text-xs leading-relaxed text-yellow-200/80">
+              Your browser is blocking the WebSocket needed for live rooms.
+              Try disabling VPN, ad blockers, or Brave Shields — or use Chrome.
+            </p>
+          </div>
+        )}
 
         {/* Card */}
         <div className="w-full bg-card border border-border rounded-2xl p-6 flex flex-col gap-5 shadow-lg">

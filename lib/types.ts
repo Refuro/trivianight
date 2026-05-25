@@ -10,13 +10,15 @@ export interface Identity {
 }
 
 export interface Player {
-  id: string; // assigned by server on connect
+  id: string; // stable client-generated ID, persists across reconnects
   name: string;
   avatarId: string; // matches an id in lib/avatars.ts
   color: string; // hex string for the ring around avatar
   teamId: string | null;
   voted: GameMode | null;
   score: number;
+  online: boolean;
+  lastSeen: number; // unix ms timestamp of last connect/disconnect
 }
 
 // ----- Teams -----
@@ -161,11 +163,13 @@ export type Pack = TriviaPack | JeopardyPack;
 export type ClientMessage =
   | {
       type: "join";
+      clientId: string;
       isCreator: boolean;
       name: string;
       avatarId: string;
       color: string;
     }
+  | { type: "claim_host" }
   | {
       type: "settings_update";
       teamsEnabled?: boolean;

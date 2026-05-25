@@ -134,7 +134,7 @@ export default function RoomPage() {
   const isCreator = searchParams.get("host") === "true";
 
   const { identity, checked } = useIdentity();
-  const { state, send, kickReason, myPlayerId } = useRoom(
+  const { state, send, kickReason, myPlayerId, connectionStatus } = useRoom(
     code,
     identity,
     isCreator,
@@ -147,6 +147,10 @@ export default function RoomPage() {
   useEffect(() => {
     if (kickReason) router.push(`/?kicked=${kickReason}`);
   }, [kickReason, router]);
+
+  const hostPlayer = state?.players.find((p) => p.id === state.hostId);
+  const hostOffline = !!hostPlayer && !hostPlayer.online;
+  const canClaimHost = hostOffline && myPlayerId !== state?.hostId;
 
   function handleVote(gameMode: GameMode) {
     send({ type: "vote", gameMode });
@@ -169,7 +173,53 @@ export default function RoomPage() {
   const myTeamId =
     state?.players.find((p) => p.id === myPlayerId)?.teamId ?? null;
 
-  // TODO: Branch on state.phase → lobby / playing / ended
+  // Loading / connection-failure gates
+  if (!state) {
+    if (connectionStatus === "failed") {
+      return (
+        <main className="min-h-screen flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-card border border-border rounded-2xl p-6 flex flex-col gap-4 text-center">
+            <span className="text-4xl">📡</span>
+            <h1 className="text-xl font-black text-text">Can&apos;t connect</h1>
+            <p className="text-muted text-sm leading-relaxed">
+              Your browser couldn&apos;t open a real-time connection. This is
+              usually caused by a VPN, ad blocker, Brave Shields, or a corporate
+              firewall blocking WebSockets.
+            </p>
+            <ul className="text-muted text-xs text-left list-disc pl-5 space-y-1">
+              <li>Try a different browser (Chrome works best)</li>
+              <li>Disable your VPN or shields and refresh</li>
+              <li>Pause ad-blocking extensions for this site</li>
+            </ul>
+            <div className="flex gap-2 justify-center">
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="bg-accent hover:bg-accent-dim text-white font-bold px-5 py-2 rounded-xl transition-colors"
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                className="bg-surface hover:bg-border border border-border text-text font-bold px-5 py-2 rounded-xl transition-colors"
+              >
+                Back home
+              </button>
+            </div>
+          </div>
+        </main>
+      );
+    }
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6">
+        <div className="flex flex-col items-center gap-3 text-muted">
+          <div className="w-10 h-10 rounded-full border-2 border-border border-t-accent animate-spin" />
+          <p className="text-sm">Connecting to room {code}...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <>
@@ -238,12 +288,23 @@ export default function RoomPage() {
                       avatarId={player.avatarId}
                       color={player.color}
                       name={player.name}
+                      online={player.online}
                     />
                   ))}
                   {!state && (
                     <p className="text-muted text-sm">Connecting...</p>
                   )}
                 </div>
+
+                {canClaimHost && (
+                  <button
+                    type="button"
+                    onClick={() => send({ type: "claim_host" })}
+                    className="mt-2 self-start text-xs bg-yellow-400/10 hover:bg-yellow-400/20 border border-yellow-400/50 text-yellow-400 font-semibold px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    Host is offline — Claim Host
+                  </button>
+                )}
               </div>
 
               {/* Right panel: voting + host settings */}

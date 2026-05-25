@@ -16,6 +16,7 @@ export interface Player {
   color: string; // hex string for the ring around avatar
   teamId: string | null;
   voted: GameMode | null;
+  score: number;
 }
 
 // ----- Teams -----
@@ -62,12 +63,36 @@ export interface RoomState {
 
 // ----- Trivia gameplay state -----
 
+export type TriviaPhase = "idle" | "question_open" | "answers_closed" | "answer_revealed";
+
+export interface ActiveQuestion {
+  text: string;
+  answer: string;
+  imageUrl?: string;
+  points: number;
+}
+
+export interface AnswerEntry {
+  groupId: string;              // teamId in team mode, playerId in non-team mode
+  text: string;
+  submittedBy: string | null;   // playerId of last submitter
+  judgment: "accepted" | "rejected" | null;
+}
+
+export interface TeamDraft {
+  teamId: string;
+  text: string;
+  lockedPlayerIds: string[];    // players who have clicked "Lock In"
+}
+
 export interface TriviaState {
   mode: "trivia";
+  triviaPhase: TriviaPhase;
   roundIndex: number;
-  questionIndex: number;
-  questionRevealed: boolean;
-  answerRevealed: boolean;
+  questionIndex: number;        // -1 for custom questions
+  activeQuestion: ActiveQuestion | null;
+  answers: AnswerEntry[];
+  teamDrafts: TeamDraft[];      // collaborative drafts in team mode, not yet submitted
 }
 
 // ----- Jeopardy gameplay state -----
@@ -151,12 +176,20 @@ export type ClientMessage =
   | { type: "team_create"; name: string }
   | { type: "start_game" }
   | { type: "buzz_in" }
-  | {
-      type: "host_action";
-      action: "reveal_question" | "reveal_answer" | "next" | "award" | "judge";
-      payload?: unknown;
-    }
-  | { type: "vote"; gameMode: GameMode };
+  | { type: "submit_answer"; text: string }
+  | { type: "update_draft"; text: string }
+  | { type: "lock_in" }
+  | { type: "host_action"; action: "reveal_question"; question: ActiveQuestion }
+  | { type: "host_action"; action: "close_answers" }
+  | { type: "host_action"; action: "reveal_answer" }
+  | { type: "host_action"; action: "award_points"; groupId: string; points: number }
+  | { type: "host_action"; action: "judge_answer"; groupId: string; verdict: "accept" | "reject" }
+  | { type: "host_action"; action: "submit_draft"; teamId: string }
+  | { type: "host_action"; action: "next_question" }
+  | { type: "host_action"; action: "trigger_effect"; effect: string }
+  | { type: "host_action"; action: "end_game" }
+  | { type: "vote"; gameMode: GameMode }
+  | { type: "reset_game" };
 
 export type ServerMessage =
   | { type: "room_state"; state: RoomState }
@@ -167,6 +200,7 @@ export type ServerMessage =
       reason:
         | "no_room_found"
         | "room_full"
+        | "game_in_progress"
         | "host_kicked"
         | "previously_kicked";
     };

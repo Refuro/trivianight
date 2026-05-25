@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { AVATARS, AVATAR_COLORS } from "@/lib/avatars";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { customAlphabet } from "nanoid";
 
 type Direction = "left" | "right"
@@ -15,8 +15,25 @@ export default function LandingPage() {
   const [name, setName] = useState('')
   const [shownAvatar, setShownAvatar] = useState(0)
   const [shownColor, setShownColor] = useState(0)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setShownAvatar(Math.floor(Math.random() * AVATARS.length))
+    setShownColor(Math.floor(Math.random() * AVATAR_COLORS.length))
+    setMounted(true)
+  }, [])
 
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const kickedReason = searchParams.get('kicked')
+
+  const kickMessage: Record<string, string> = {
+    no_room_found: "That room doesn't exist.",
+    room_full: "That room is full.",
+    game_in_progress: "That game has already started.",
+    host_kicked: "You were removed by the host.",
+    previously_kicked: "You were already removed from that room.",
+  }
 
   function handleAvatarSelect(d: Direction) {
     if (d === 'left') {
@@ -66,6 +83,13 @@ export default function LandingPage() {
           <p className="text-muted text-sm mt-1">Pick your look, then jump in</p>
         </div>
 
+        {/* Kick banner */}
+        {kickedReason && (
+          <div className="w-full bg-red-500/10 border border-red-500/40 text-red-400 text-sm font-medium px-4 py-2.5 rounded-xl text-center">
+            {kickMessage[kickedReason] ?? "You were removed from the room."}
+          </div>
+        )}
+
         {/* Card */}
         <div className="w-full bg-card border border-border rounded-2xl p-6 flex flex-col gap-5 shadow-lg">
 
@@ -87,7 +111,7 @@ export default function LandingPage() {
 
               {/* Avatar display */}
               <div
-                className="text-5xl w-20 h-20 flex items-center justify-center rounded-full border-4 shadow-lg"
+                className={`text-5xl w-20 h-20 flex items-center justify-center rounded-full border-4 shadow-lg transition-opacity duration-200 ${mounted ? "opacity-100" : "opacity-0"}`}
                 style={{ backgroundColor: AVATAR_COLORS[shownColor], borderColor: AVATAR_COLORS[shownColor] }}
               >
                 {AVATARS[shownAvatar].emoji}

@@ -2,13 +2,122 @@
 
 import PlayerIcon from "@/components/PlayerIcon";
 import TriviaHosted from "@/components/TriviaHosted";
-import { GameMode } from "@/lib/types";
+import { AVATARS } from "@/lib/avatars";
+import { ClientMessage, GameMode, Player, RoomState, Team } from "@/lib/types";
 import { useIdentity } from "@/lib/useIdentity";
 import { useRoom } from "@/lib/useRoom";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
 const MIN_PLAYERS = 1;
+
+function EndedScreen({ state, isHost, send }: { state: RoomState; isHost: boolean; send: (msg: ClientMessage) => void }) {
+  const router = useRouter();
+
+  const sortedTeams = [...state.teams].filter((t) => t.memberIds.length > 0).sort((a, b) => b.score - a.score);
+  const sortedPlayers = [...state.players].filter((p) => p.id !== state.hostId).sort((a, b) => b.score - a.score);
+
+  const medal = (i: number) => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`);
+
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-center p-6 gap-6">
+      <div className="text-center">
+        <span className="text-6xl">🏆</span>
+        <h1 className="text-3xl font-black text-text mt-3">Game Over</h1>
+      </div>
+
+      <div className="w-full max-w-md flex flex-col gap-2">
+        {state.settings.teamsEnabled ? (
+          sortedTeams.map((team: Team, i) => {
+            const members = state.players.filter((p) => p.teamId === team.id);
+            return (
+              <div
+                key={team.id}
+                className={`flex items-center gap-3 p-4 rounded-2xl border ${i === 0 ? "border-accent bg-surface" : "border-border bg-card"}`}
+              >
+                <span className="text-xl w-8 text-center">{medal(i)}</span>
+                <div className="flex-1">
+                  <p className="font-bold text-text">{team.name}</p>
+                  <div className="flex gap-1 mt-1">
+                    {members.map((p) => {
+                      const emoji = AVATARS.find((a) => a.id === p.avatarId)?.emoji;
+                      return (
+                        <div
+                          key={p.id}
+                          title={p.name}
+                          style={{ backgroundColor: p.color }}
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
+                        >
+                          {emoji}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <span className="font-mono font-black text-accent text-xl">{team.score}</span>
+              </div>
+            );
+          })
+        ) : (
+          sortedPlayers.map((player: Player, i) => {
+            const emoji = AVATARS.find((a) => a.id === player.avatarId)?.emoji;
+            return (
+              <div
+                key={player.id}
+                className={`flex items-center gap-3 p-4 rounded-2xl border ${i === 0 ? "border-accent bg-surface" : "border-border bg-card"}`}
+              >
+                <span className="text-xl w-8 text-center">{medal(i)}</span>
+                <div
+                  style={{ backgroundColor: player.color }}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-lg flex-shrink-0"
+                >
+                  {emoji}
+                </div>
+                <p className="flex-1 font-bold text-text">{player.name}</p>
+                <span className="font-mono font-black text-accent text-xl">{player.score}</span>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="flex gap-3">
+        {isHost && (
+          <button
+            type="button"
+            onClick={() => send({ type: "reset_game" })}
+            className="bg-accent hover:bg-accent-dim text-white font-bold px-6 py-2.5 rounded-xl transition-colors shadow-md"
+          >
+            Play Again
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => router.push("/")}
+          className="bg-surface hover:bg-border border border-border text-text font-bold px-6 py-2.5 rounded-xl transition-colors"
+        >
+          Back to Home
+        </button>
+      </div>
+
+      {!isHost && (
+        <p className="text-muted text-sm">Waiting for host to start a new game...</p>
+      )}
+    </main>
+  );
+}
+
+function JeopardyJoke() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6">
+      <h1 className="text-5xl">No jeopardy for you</h1>
+      <img
+        src="https://media.giphy.com/media/Ju7l5y9osyymQ/giphy.gif"
+        className="max-w-xl mx-auto"
+      />
+    </div>
+  );
+}
 
 export default function RoomPage() {
   const router = useRouter();
@@ -43,13 +152,6 @@ export default function RoomPage() {
     send({ type: "settings_update", ...patch });
   }
 
-  function checkAllJoinedTeam() {
-    if (!state) return false;
-    if (!state.settings.teamsEnabled) return true;
-    return state.players.every((p) => p.teamId !== null);
-  }
-
-  const allJoined = checkAllJoinedTeam();
   const leadingMode =
     (state?.votes.trivia ?? 0) > (state?.votes.jeopardy ?? 0)
       ? "Trivia"
@@ -102,7 +204,6 @@ export default function RoomPage() {
                     disabled={
                       (leadingMode === "Tie" && state?.votes.jeopardy === 0) ||
                       !isHost ||
-                      !allJoined ||
                       (state.players.length ?? 0) < MIN_PLAYERS
                     }
                     className="bg-accent hover:bg-accent-dim disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-4 py-2 rounded-xl transition-colors shadow-md"
@@ -229,59 +330,59 @@ export default function RoomPage() {
               </div>
             </div>
 
-            {/* Team selection row — visible to all when teams are enabled */}
+            {/* Team selection row */}
             {state?.settings?.teamsEnabled && state.teams.length > 0 && (
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <h2 className="font-bold text-text">Pick a Team</h2>
-                  <span className="text-xs text-muted">
-                    Click a team to join
-                  </span>
+                  <h2 className="font-bold text-text">
+                    {isHost ? "Team Overview" : "Pick a Team"}
+                  </h2>
+                  {!isHost && (
+                    <span className="text-xs text-muted">Click a team to join</span>
+                  )}
                 </div>
                 <div className="flex gap-3">
                   {state.teams.map((team) => {
-                    const members = state.players.filter(
-                      (p) => p.teamId === team.id,
-                    );
+                    const members = state.players.filter((p) => p.teamId === team.id);
                     const isMyTeam = myTeamId === team.id;
-                    return (
-                      <button
-                        key={team.id}
-                        type="button"
-                        onClick={() =>
-                          send({ type: "team_join", teamId: team.id })
-                        }
-                        className={`flex-1 flex flex-col gap-2 p-4 rounded-2xl border text-left transition-colors ${isMyTeam ? "border-accent bg-surface" : "border-border bg-card hover:bg-surface"}`}
-                      >
+                    const inner = (
+                      <>
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-text">
-                            {team.name}
-                          </span>
+                          <span className="font-bold text-text">{team.name}</span>
                           <span className="text-xs text-muted">
-                            {members.length} player
-                            {members.length !== 1 ? "s" : ""}
+                            {members.length} player{members.length !== 1 ? "s" : ""}
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           {members.map((p) => (
-                            <span
-                              key={p.id}
-                              className="text-xs bg-card border border-border text-text px-2 py-0.5 rounded-full"
-                            >
+                            <span key={p.id} className="text-xs bg-card border border-border text-text px-2 py-0.5 rounded-full">
                               {p.name}
                             </span>
                           ))}
                           {members.length === 0 && (
-                            <span className="text-xs text-muted">
-                              No players yet
-                            </span>
+                            <span className="text-xs text-muted">No players yet</span>
                           )}
                         </div>
                         {isMyTeam && (
-                          <span className="text-xs font-semibold text-accent">
-                            ✓ Your team
-                          </span>
+                          <span className="text-xs font-semibold text-accent">✓ Your team</span>
                         )}
+                      </>
+                    );
+                    return isHost ? (
+                      <div
+                        key={team.id}
+                        className="flex-1 flex flex-col gap-2 p-4 rounded-2xl border border-border bg-card"
+                      >
+                        {inner}
+                      </div>
+                    ) : (
+                      <button
+                        key={team.id}
+                        type="button"
+                        onClick={() => send({ type: "team_join", teamId: team.id })}
+                        className={`flex-1 flex flex-col gap-2 p-4 rounded-2xl border text-left transition-colors ${isMyTeam ? "border-accent bg-surface" : "border-border bg-card hover:bg-surface"}`}
+                      >
+                        {inner}
                       </button>
                     );
                   })}
@@ -290,8 +391,12 @@ export default function RoomPage() {
             )}
           </div>
         </main>
+      ) : state?.phase === "ended" ? (
+        <EndedScreen state={state} isHost={isHost} send={send} />
       ) : state?.phase === "playing" && state.gameMode === "trivia" ? (
-        <TriviaHosted state={state} myPlayerId={myPlayerId ?? ""} />
+        <TriviaHosted state={state} myPlayerId={myPlayerId ?? ""} send={send} />
+      ) : state?.phase === "playing" && state.gameMode === "jeopardy" ? (
+        <JeopardyJoke />
       ) : null}
     </>
   );

@@ -7,7 +7,7 @@ import { ClientMessage, GameMode, Player, RoomState, Team } from "@/lib/types";
 import { useIdentity } from "@/lib/useIdentity";
 import { useRoom } from "@/lib/useRoom";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const MIN_PLAYERS = 1;
 
@@ -123,6 +123,13 @@ export default function RoomPage() {
   const router = useRouter();
   const params = useParams();
   const code = params.code as string;
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  function copyCode() {
+    navigator.clipboard.writeText(code);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
+  }
   const searchParams = useSearchParams();
   const isCreator = searchParams.get("host") === "true";
 
@@ -174,14 +181,18 @@ export default function RoomPage() {
             <h1 className="text-2xl font-black text-text">
               Trivia <span className="text-accent">Night</span>
             </h1>
-            <div className="flex items-center gap-2 bg-surface border border-border rounded-full px-4 py-1.5">
+            <button
+              type="button"
+              onClick={copyCode}
+              className="flex items-center gap-2 bg-surface hover:bg-border border border-border rounded-full px-4 py-1.5 transition-colors group"
+            >
               <span className="text-muted text-xs uppercase tracking-widest">
-                Room
+                {codeCopied ? "Copied!" : "Room"}
               </span>
-              <span className="font-mono font-bold text-accent tracking-widest">
+              <span className={`font-mono font-bold tracking-widest transition-colors ${codeCopied ? "text-green-400" : "text-accent group-hover:text-text"}`}>
                 {code}
               </span>
-            </div>
+            </button>
           </div>
 
           {/* Main layout */}

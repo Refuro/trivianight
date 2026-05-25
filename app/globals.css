@@ -24,3 +24,25 @@ body {
   background-image: radial-gradient(circle, #252c4a 1px, transparent 1px);
   background-size: 28px 28px;
 }
+
+/* ── Player-view animations ── */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(0.9); }
+  65%  { transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes lock-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  35%       { transform: translateY(-6px) scale(1.15); }
+  65%       { transform: translateY(-2px) scale(1.05); }
+}
+
+.animate-slide-up    { animation: slide-up    0.38s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-pop-in      { animation: pop-in      0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-lock-bounce { animation: lock-bounce 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }

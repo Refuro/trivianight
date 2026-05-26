@@ -97,17 +97,17 @@ export default function LandingPage() {
 
   function handleAvatarSelect(d: Direction) {
     if (d === 'left') {
-      setShownAvatar(shownAvatar === 0 ? AVATARS.length - 1 : prev => prev - 1)
+      setShownAvatar(prev => prev === 0 ? AVATARS.length - 1 : prev - 1)
     } else {
-      setShownAvatar(shownAvatar >= AVATARS.length - 1 ? 0 : prev => prev + 1)
+      setShownAvatar(prev => prev >= AVATARS.length - 1 ? 0 : prev + 1)
     }
   }
 
   function handleColorSelect(d: Direction) {
     if (d === 'left') {
-      setShownColor(shownColor === 0 ? AVATAR_COLORS.length - 1 : prev => prev - 1)
+      setShownColor(prev => prev === 0 ? AVATAR_COLORS.length - 1 : prev - 1)
     } else {
-      setShownColor(shownColor >= AVATAR_COLORS.length - 1 ? 0 : prev => prev + 1)
+      setShownColor(prev => prev >= AVATAR_COLORS.length - 1 ? 0 : prev + 1)
     }
   }
 

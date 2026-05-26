@@ -7,7 +7,10 @@ import { ClientMessage, GameMode, Player, RoomState, Team } from "@/lib/types";
 import { useIdentity } from "@/lib/useIdentity";
 import { useRoom } from "@/lib/useRoom";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSound } from "@/lib/useSound";
+import { LOBBY_SOUNDS } from "@/lib/sounds/lobby";
+import { MuteButton } from "@/components/MuteButton";
 
 const MIN_PLAYERS = 1;
 
@@ -140,6 +143,32 @@ export default function RoomPage() {
     isCreator,
   );
 
+  const { play: lobbyPlay, muted: lobbyMuted, setMuted: setLobbyMuted } = useSound(LOBBY_SOUNDS);
+
+  // Play a blip when a new player joins the lobby
+  const prevPlayerCountRef = useRef<number>(0);
+  useEffect(() => {
+    const count = state?.players.length ?? 0;
+    if (count > prevPlayerCountRef.current && prevPlayerCountRef.current > 0) {
+      lobbyPlay("player_joined");
+    }
+    prevPlayerCountRef.current = count;
+  }, [state?.players.length, lobbyPlay]);
+
+  // Play a sound when the game starts
+  const prevPhaseRef = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const phase = state?.phase ?? null;
+    if (prevPhaseRef.current === undefined) {
+      prevPhaseRef.current = phase;
+      return;
+    }
+    if (phase !== prevPhaseRef.current && phase === "playing") {
+      lobbyPlay("game_started");
+    }
+    prevPhaseRef.current = phase;
+  }, [state?.phase, lobbyPlay]);
+
   useEffect(() => {
     if (!identity && checked) router.push("/");
   }, [identity, checked, router]);
@@ -231,18 +260,21 @@ export default function RoomPage() {
             <h1 className="text-2xl font-black text-text">
               Trivia <span className="text-accent">Night</span>
             </h1>
-            <button
-              type="button"
-              onClick={copyCode}
-              className="flex items-center gap-2 bg-surface hover:bg-border border border-border rounded-full px-4 py-1.5 transition-colors group"
-            >
-              <span className="text-muted text-xs uppercase tracking-widest">
-                {codeCopied ? "Copied!" : "Room"}
-              </span>
-              <span className={`font-mono font-bold tracking-widest transition-colors ${codeCopied ? "text-green-400" : "text-accent group-hover:text-text"}`}>
-                {code}
-              </span>
-            </button>
+            <div className="flex items-center gap-2">
+              <MuteButton muted={lobbyMuted} onToggle={() => setLobbyMuted(!lobbyMuted)} />
+              <button
+                type="button"
+                onClick={copyCode}
+                className="flex items-center gap-2 bg-surface hover:bg-border border border-border rounded-full px-4 py-1.5 transition-colors group"
+              >
+                <span className="text-muted text-xs uppercase tracking-widest">
+                  {codeCopied ? "Copied!" : "Room"}
+                </span>
+                <span className={`font-mono font-bold tracking-widest transition-colors ${codeCopied ? "text-green-400" : "text-accent group-hover:text-text"}`}>
+                  {code}
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* Main layout */}

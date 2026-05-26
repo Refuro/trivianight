@@ -1,10 +1,13 @@
 "use client";
 
-import { ClientMessage, RoomState, TriviaState } from "@/lib/types";
+import { ClientMessage, RoomState, TriviaState, AnswerEntry } from "@/lib/types";
 import { AVATARS } from "@/lib/avatars";
 import { CATEGORIES, Category } from "@/lib/questions";
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, X, Shuffle } from "lucide-react";
+import { useSound } from "@/lib/useSound";
+import { TRIVIA_SOUNDS } from "@/lib/sounds/trivia";
+import { MuteButton } from "@/components/MuteButton";
 
 export default function TriviaHosted({
   state,
@@ -28,6 +31,58 @@ export default function TriviaHosted({
   const [pointsInput, setPointsInput] = useState(1);
   const [randomSpin, setRandomSpin] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+
+  // Derived state — needed early so the sound effects below can depend on them
+  const isHost = state.hostId === myPlayerId;
+  const gs = state.gameState as TriviaState | null;
+
+  const eligibleGroups = state.settings.teamsEnabled
+    ? state.teams.filter((t) =>
+        t.memberIds.some((id) => state.players.find((p) => p.id === id)?.online)
+      )
+    : state.players.filter((p) => p.id !== state.hostId && p.online);
+  const answeredCount = eligibleGroups.filter((entity) =>
+    gs?.answers.some((a) => a.groupId === entity.id),
+  ).length;
+  const allAnswered = eligibleGroups.length > 0 && answeredCount >= eligibleGroups.length;
+
+  const { play, muted, setMuted } = useSound(TRIVIA_SOUNDS);
+
+  // Clear answer inputs when a new question is revealed
+  useEffect(() => {
+    setAnswerInput("");
+    setDraftInput("");
+  }, [gs?.questionIndex]);
+
+  // Fire a sound when the trivia phase changes (skip on initial mount)
+  const prevPhaseRef = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const phase = gs?.triviaPhase ?? null;
+    if (prevPhaseRef.current === undefined) {
+      prevPhaseRef.current = phase;
+      return;
+    }
+    if (phase === prevPhaseRef.current) return;
+    prevPhaseRef.current = phase;
+    if (phase === "question_open") play("question_open");
+    else if (phase === "answers_closed") play("answers_closed");
+    else if (phase === "answer_revealed") play("answer_revealed");
+  }, [gs?.triviaPhase, play]);
+
+  // Fire a sound when an answer gets accepted or rejected
+  const prevAnswersRef = useRef<AnswerEntry[]>([]);
+  useEffect(() => {
+    const answers = gs?.answers ?? [];
+    for (const answer of answers) {
+      const prev = prevAnswersRef.current.find((a) => a.groupId === answer.groupId);
+      if (answer.judgment === "accepted" && prev?.judgment !== "accepted") {
+        play("answer_accepted");
+      } else if (answer.judgment === "rejected" && prev?.judgment !== "rejected") {
+        play("answer_rejected");
+      }
+    }
+    prevAnswersRef.current = answers;
+  }, [gs?.answers, play]);
 
   function copyCode() {
     navigator.clipboard.writeText(state.roomCode);
@@ -59,9 +114,6 @@ export default function TriviaHosted({
     setTimeout(() => setRandomSpin(false), 600);
   }
 
-  const isHost = state.hostId === myPlayerId;
-  const gs = state.gameState as TriviaState | null;
-
   // Player (non-host) view
   if (!isHost) {
     const myPlayer = state.players.find((p) => p.id === myPlayerId);
@@ -81,6 +133,9 @@ export default function TriviaHosted({
 
     return (
       <main className="min-h-screen flex flex-col p-6 gap-4">
+        <div className="flex justify-end -mb-2">
+          <MuteButton muted={muted} onToggle={() => setMuted(!muted)} />
+        </div>
         {hostOffline && (
           <div className="flex items-center justify-between gap-3 bg-yellow-400/10 border border-yellow-400/40 text-yellow-300 text-sm px-4 py-2.5 rounded-xl">
             <span>The host is offline.</span>
@@ -326,12 +381,12 @@ export default function TriviaHosted({
                   return (
                     <div
                       key={team.id}
-                      className="flex-1 min-w-[180px] flex flex-col gap-2"
+                      className="flex-1 min-w-[180px] flex flex-col gap-4"
                     >
                       {/* Notepad answer (revealed phase only) */}
                       {gs?.triviaPhase === "answer_revealed" && answer && (
                         <div
-                          className="relative bg-yellow-50 -rotate-1 px-4 py-3 rounded-sm shadow-md border-l-4 border-yellow-300"
+                          className="relative bg-yellow-50 px-4 py-3 rounded-sm shadow-md border-l-4 border-yellow-300"
                           style={{
                             backgroundImage:
                               "repeating-linear-gradient(transparent, transparent 18px, #e5d9a5 18px, #e5d9a5 19px)",
@@ -408,11 +463,11 @@ export default function TriviaHosted({
                   return (
                     <div
                       key={player.id}
-                      className="flex-1 min-w-[160px] flex flex-col gap-2"
+                      className="flex-1 min-w-[160px] flex flex-col gap-4"
                     >
                       {gs?.triviaPhase === "answer_revealed" && answer && (
                         <div
-                          className="relative bg-yellow-50 -rotate-1 px-3 py-2 rounded-sm shadow-md border-l-4 border-yellow-300"
+                          className="relative bg-yellow-50 px-3 py-2 rounded-sm shadow-md border-l-4 border-yellow-300"
                           style={{
                             backgroundImage:
                               "repeating-linear-gradient(transparent, transparent 18px, #e5d9a5 18px, #e5d9a5 19px)",
@@ -481,6 +536,7 @@ export default function TriviaHosted({
               {state.roomCode}
             </span>
           </button>
+          <MuteButton muted={muted} onToggle={() => setMuted(!muted)} />
           <button
             type="button"
             onClick={() => {
@@ -704,12 +760,15 @@ export default function TriviaHosted({
             {gs?.triviaPhase === "question_open" && (
               <button
                 type="button"
+                disabled={!allAnswered}
                 onClick={() =>
                   send({ type: "host_action", action: "close_answers" })
                 }
-                className="w-full bg-surface hover:bg-border border border-border text-text font-bold py-2.5 rounded-xl transition-colors"
+                className="w-full bg-surface hover:bg-border disabled:opacity-40 disabled:cursor-not-allowed border border-border text-text font-bold py-2.5 rounded-xl transition-colors"
               >
-                Lock Answers
+                {allAnswered
+                  ? "Lock Answers"
+                  : `Waiting for answers (${answeredCount}/${eligibleGroups.length})`}
               </button>
             )}
             {gs?.triviaPhase === "answers_closed" && (
@@ -1034,44 +1093,46 @@ export default function TriviaHosted({
                           by {submitter.name}
                         </p>
                       )}
-                      <div className="flex gap-2 mt-1">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            send({
-                              type: "host_action",
-                              action: "judge_answer",
-                              groupId: entity.id,
-                              verdict: "accept",
-                            })
-                          }
-                          className={`flex-1 text-sm font-bold py-1.5 rounded-lg transition-colors ${
-                            judgment === "accepted"
-                              ? "bg-green-500 text-white"
-                              : "bg-card hover:bg-green-500/20 border border-border text-text"
-                          }`}
-                        >
-                          ✓ Accept
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            send({
-                              type: "host_action",
-                              action: "judge_answer",
-                              groupId: entity.id,
-                              verdict: "reject",
-                            })
-                          }
-                          className={`flex-1 text-sm font-bold py-1.5 rounded-lg transition-colors ${
-                            judgment === "rejected"
-                              ? "bg-red-500 text-white"
-                              : "bg-card hover:bg-red-500/20 border border-border text-text"
-                          }`}
-                        >
-                          ✗ Reject
-                        </button>
-                      </div>
+                      {gs.triviaPhase === "answer_revealed" && (
+                        <div className="flex gap-2 mt-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              send({
+                                type: "host_action",
+                                action: "judge_answer",
+                                groupId: entity.id,
+                                verdict: "accept",
+                              })
+                            }
+                            className={`flex-1 text-sm font-bold py-1.5 rounded-lg transition-colors ${
+                              judgment === "accepted"
+                                ? "bg-green-500 text-white"
+                                : "bg-card hover:bg-green-500/20 border border-border text-text"
+                            }`}
+                          >
+                            ✓ Accept
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              send({
+                                type: "host_action",
+                                action: "judge_answer",
+                                groupId: entity.id,
+                                verdict: "reject",
+                              })
+                            }
+                            className={`flex-1 text-sm font-bold py-1.5 rounded-lg transition-colors ${
+                              judgment === "rejected"
+                                ? "bg-red-500 text-white"
+                                : "bg-card hover:bg-red-500/20 border border-border text-text"
+                            }`}
+                          >
+                            ✗ Reject
+                          </button>
+                        </div>
+                      )}
                     </>
                   ) : draft?.text ? (
                     <>

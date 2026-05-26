@@ -48,12 +48,10 @@ export default class TriviaParty implements Party.Server {
         const clientId = msg.clientId
         this.connToClient.set(sender.id, clientId)
 
-        // Reconnect path: clientId already in state
+        // Reconnect path: clientId already in state — restore online status only,
+        // ignore any name/avatar changes so players can't rejoin as someone else
         const existing = this.state.players.find(p => p.id === clientId)
         if (existing) {
-          existing.name = msg.name
-          existing.avatarId = msg.avatarId
-          existing.color = msg.color
           existing.online = true
           existing.lastSeen = Date.now()
           this.broadcastState()
